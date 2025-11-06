@@ -1,0 +1,13 @@
+{
+    "servers": {
+        "wikijs-mcp-server": {
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "-i",
+                "wikijs-mcp-server:latest"
+            ],
+        }
+    }
+}
