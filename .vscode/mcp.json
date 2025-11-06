@@ -1,4 +1,24 @@
 {
+    "inputs": [
+        {
+            "id": "token",
+            "type": "promptString",
+            "description": "WIKIJS API Token",
+            "password": true
+        },
+        {
+            "id": "host",
+            "type": "promptString",
+            "description": "WIKIJS Host",
+            "default": "http://localhost"
+        },
+        {
+            "id": "locale",
+            "type": "promptString",
+            "description": "WIKIJS Locale",
+            "default": "en"
+        }
+    ],
     "servers": {
         "wikijs-mcp-server": {
             "command": "docker",
@@ -8,6 +28,11 @@
                 "-i",
                 "wikijs-mcp-server:latest"
             ],
+            "env": {
+                "WIKIJS_HOST": "${input:host}",
+                "WIKIJS_LOCALE": "${input:locale}",
+                "WIKIJS_API_TOKEN": "${input:token}"
+            },
         }
-    }
+    },
 }

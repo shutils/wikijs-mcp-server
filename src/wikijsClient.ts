@@ -6,6 +6,7 @@ dotenv.config();
 
 export const WIKIJS_HOST = process.env.WIKIJS_HOST || "http://localhost:3000";
 export const WIKIJS_API_TOKEN = process.env.WIKIJS_API_TOKEN || "";
+export const WIKIJS_LOCALE = process.env.WIKIJS_LOCALE || "en";
 
 if (!WIKIJS_API_TOKEN) {
   throw new Error("WIKIJS_API_TOKEN is not set in environment variables");
@@ -13,13 +14,14 @@ if (!WIKIJS_API_TOKEN) {
 
 export class WikiJSClient {
   private client: ApolloClient;
+  private locale: string = WIKIJS_LOCALE;
 
-  constructor(host: string, apiToken: string) {
+  constructor() {
     this.client = new ApolloClient({
       link: new HttpLink({
-        uri: `${host}/api/graphql`,
+        uri: `${WIKIJS_HOST}/graphql`,
         headers: {
-          Authorization: `Bearer ${apiToken}`,
+          Authorization: `Bearer ${WIKIJS_API_TOKEN}`,
         },
       }),
       cache: new InMemoryCache(),
