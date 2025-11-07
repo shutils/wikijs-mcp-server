@@ -8,8 +8,10 @@ export const WIKIJS_HOST = process.env.WIKIJS_HOST || "http://localhost:3000";
 export const WIKIJS_API_TOKEN = process.env.WIKIJS_API_TOKEN || "";
 export const WIKIJS_LOCALE = process.env.WIKIJS_LOCALE || "en";
 
-if (!WIKIJS_API_TOKEN) {
-  throw new Error("WIKIJS_API_TOKEN is not set in environment variables");
+if (!WIKIJS_HOST || !WIKIJS_API_TOKEN) {
+  throw new Error(
+    "WIKIJS_HOST or WIKIJS_API_TOKEN is not set in environment variables"
+  );
 }
 
 export class WikiJSClient {

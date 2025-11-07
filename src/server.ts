@@ -1,26 +1,82 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
+import { WikiJSClient } from './wikijsClient.js';
 
 const server = new McpServer({
     name: 'example-server',
     version: '1.0.0'
 });
 
-// ... set up server resources, tools, and prompts ...
+// Initialize WikiJS Client
+const wikijsClient = new WikiJSClient();
+
+// WikiJS Tools
 server.registerTool(
-    'echo',
+    'get-page-list',
     {
-        title: 'Echo Tool',
-        description: 'Echoes the input text',
-        inputSchema: { text: z.string() },
-        outputSchema: { echoedText: z.string() }
+        title: 'Get WikiJS Page List',
+        description: 'Retrieve a list of all pages from WikiJS',
+        inputSchema: {},
+        outputSchema: {
+            pages: z.array(z.object({
+                id: z.number(),
+                title: z.string(),
+                description: z.string()
+            }))
+        }
     },
-    async ({ text }) => {
-        const output = { echoedText: text };
+    async () => {
+        const pages = await wikijsClient.getPageList();
+        const output = { pages };
         return {
-            content: [{ type: 'text', text: JSON.stringify(output) }],
+            content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
             structuredContent: output
+        };
+    }
+);
+
+server.registerTool(
+    'get-page-content',
+    {
+        title: 'Get WikiJS Page Content',
+        description: 'Retrieve the content of a specific page from WikiJS',
+        inputSchema: { pageId: z.number() },
+        outputSchema: {
+            id: z.number(),
+            title: z.string(),
+            content: z.string()
+        }
+    },
+    async ({ pageId }) => {
+        const page = await wikijsClient.getPageById(pageId);
+        return {
+            content: [{ type: 'text', text: JSON.stringify(page, null, 2) }],
+            structuredContent: page
+        };
+    }
+);
+
+server.registerTool(
+    'update-page-description',
+    {
+        title: 'Update WikiJS Page Description',
+        description: 'Update the description of a specific page in WikiJS',
+        inputSchema: {
+            pageId: z.number(),
+            newDescription: z.string()
+        },
+        outputSchema: {
+            id: z.number(),
+            title: z.string(),
+            description: z.string()
+        }
+    },
+    async ({ pageId, newDescription }) => {
+        const result = await wikijsClient.updatePageDescription(pageId, newDescription);
+        return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            structuredContent: result
         };
     }
 );

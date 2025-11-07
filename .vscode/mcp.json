@@ -26,13 +26,15 @@
                 "run",
                 "--rm",
                 "-i",
+                "--net=host",
+                "-e",
+                "WIKIJS_API_TOKEN=${input:token}",
+                "-e",
+                "WIKIJS_HOST=${input:host}",
+                "-e",
+                "WIKIJS_LOCALE=${input:locale}",
                 "wikijs-mcp-server:latest"
             ],
-            "env": {
-                "WIKIJS_HOST": "${input:host}",
-                "WIKIJS_LOCALE": "${input:locale}",
-                "WIKIJS_API_TOKEN": "${input:token}"
-            },
         }
     },
 }
