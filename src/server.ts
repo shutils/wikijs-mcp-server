@@ -81,5 +81,33 @@ server.registerTool(
     }
 );
 
+server.registerTool(
+    'update-page-tags',
+    {
+        title: 'Update WikiJS Page Tags',
+        description: 'Update the tags of a specific page in WikiJS',
+        inputSchema: {
+            pageId: z.number(),
+            tags: z.array(z.string())
+        },
+        outputSchema: {
+            id: z.number(),
+            title: z.string(),
+            tags: z.array(z.object({
+                id: z.number(),
+                tag: z.string(),
+                title: z.string()
+            }))
+        }
+    },
+    async ({ pageId, tags }) => {
+        const result = await wikijsClient.updatePageTags(pageId, tags);
+        return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            structuredContent: result
+        };
+    }
+);
+
 const transport = new StdioServerTransport();
 await server.connect(transport);

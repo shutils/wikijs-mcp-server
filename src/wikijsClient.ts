@@ -67,6 +67,7 @@ export class WikiJSClient {
           id: number;
           title: string;
           content: string;
+          tags: { id: number; tag: string; title: string }[];
         };
       };
     }>({
@@ -77,6 +78,11 @@ export class WikiJSClient {
               id
               title
               content
+              tags {
+                id
+                tag
+                title
+              }
             }
           }
         }
@@ -93,9 +99,8 @@ export class WikiJSClient {
     return result.data.pages.single;
   }
 
-  async updatePageDescription(pageId: number, newDescription: string) {
-    // 元のページ情報を取得して保持
-    const originalPage = await this.client.query<{
+  private async getFullPageData(pageId: number) {
+    const result = await this.client.query<{
       pages: {
         single: {
           id: number;
@@ -116,7 +121,7 @@ export class WikiJSClient {
       };
     }>({
       query: gql`
-        query GetPageDescription($id: Int!) {
+        query GetFullPageData($id: Int!) {
           pages {
             single(id: $id) {
               id
@@ -146,13 +151,26 @@ export class WikiJSClient {
       },
     });
 
-    if (!originalPage.data || !originalPage.data.pages) {
-      throw new Error(
-        `Failed to fetch original page data for page ID ${pageId}`
-      );
+    if (!result.data || !result.data.pages) {
+      throw new Error(`Failed to fetch page data for page ID ${pageId}`);
     }
 
-    // descriptionをオーバーライドして更新
+    return result.data.pages.single;
+  }
+
+  private async updatePageWithChanges(
+    pageId: number,
+    changes: Record<string, unknown>,
+    operationName: string
+  ) {
+    const originalPage = await this.getFullPageData(pageId);
+
+    const variables = {
+      ...originalPage,
+      ...changes,
+      tags: changes.tags ? changes.tags : originalPage.tags.map((tag) => tag.tag),
+    };
+
     const result = await this.client.mutate<{
       pages: {
         update: {
@@ -164,7 +182,7 @@ export class WikiJSClient {
       };
     }>({
       mutation: gql`
-        mutation UpdatePageDescription(
+        mutation UpdatePage(
           $id: Int!
           $content: String!
           $description: String!
@@ -205,24 +223,36 @@ export class WikiJSClient {
           }
         }
       `,
-      variables: {
-        ...originalPage.data.pages.single,
-        description: newDescription,
-        tags: originalPage.data.pages.single.tags.map((tag) => tag.tag),
-      },
+      variables,
     });
 
     if (!result.data || !result.data.pages) {
-      throw new Error(`Failed to update description for page ID ${pageId}`);
+      throw new Error(`Failed to update page ID ${pageId} (${operationName})`);
     }
 
     if (!result.data.pages.update.responseResult.succeeded) {
       throw new Error(
-        `Failed to update description for page ID ${pageId}: ${result.data.pages.update.responseResult.message}`
+        `Failed to update page ID ${pageId} (${operationName}): ${result.data.pages.update.responseResult.message}`
       );
     }
+  }
 
-    // 更新後のページ情報を取得して返す
+  async updatePageTags(pageId: number, newTags: string[]) {
+    await this.updatePageWithChanges(pageId, { tags: newTags }, 'updatePageTags');
+    const updatedPage = await this.getPageById(pageId);
+    return {
+      id: updatedPage.id,
+      title: updatedPage.title,
+      tags: updatedPage.tags,
+    };
+  }
+
+  async updatePageDescription(pageId: number, newDescription: string) {
+    await this.updatePageWithChanges(
+      pageId,
+      { description: newDescription },
+      'updatePageDescription'
+    );
     const updatedPage = await this.getPageById(pageId);
     return {
       id: updatedPage.id,
